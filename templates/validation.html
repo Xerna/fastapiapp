@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validación de Boleto</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div id="resultCard" class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
+            <div id="loadingState" class="text-center py-8">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                <p class="mt-4 text-gray-600">Validando boleto...</p>
+            </div>
+
+            <div id="successState" class="hidden">
+                <div class="text-center mb-6">
+                    <svg class="w-16 h-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <h2 class="text-2xl font-bold text-green-600 mt-4">¡Boleto Canjeado!</h2>
+                </div>
+                <div class="space-y-4">
+                    <p id="concertInfo" class="text-gray-700"></p>
+                    <p id="dateInfo" class="text-gray-700"></p>
+                    <p id="statusInfo" class="text-gray-700"></p>
+                    <div class="text-center mt-6">
+                        <span class="px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                            Acceso Permitido
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="errorState" class="hidden">
+                <div class="text-center mb-6">
+                    <svg class="w-16 h-16 text-red-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                    <h2 class="text-2xl font-bold text-red-600 mt-4">Boleto No Válido</h2>
+                </div>
+                <div class="space-y-4">
+                    <p id="errorMessage" class="text-center text-gray-700"></p>
+                    <div class="text-center mt-6">
+                        <span class="px-4 py-2 bg-red-100 text-red-800 rounded-full text-sm font-medium">
+                            Acceso Denegado
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function validateTicket() {
+            try {
+                const ticketId = window.location.pathname.split('/').pop();
+
+                if (!ticketId) {
+                    showError('No se proporcionó ID de boleto');
+                    return;
+                }
+
+                // Actualizado para usar la URL base correcta y el nuevo endpoint
+                const response = await fetch(`http://api.159.223.175.204.nip.io/api/boletos/api/validate/${ticketId}`);
+                const data = await response.json();
+
+                if (response.ok && data.valid) {
+                    showSuccess(data);
+                } else {
+                    showError(data.message || 'Error al validar el boleto');
+                }
+            } catch (error) {
+                showError('Error al validar el boleto');
+                console.error('Error:', error);
+            }
+        }
+
+
+        function showSuccess(data) {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('successState').classList.remove('hidden');
+
+            // Formatear la fecha
+            const fecha = new Date(data.fecha_compra).toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            document.getElementById('concertInfo').textContent = `ID Concierto: ${data.id_concierto}`;
+            document.getElementById('dateInfo').textContent = `Fecha de Compra: ${fecha}`;
+            document.getElementById('statusInfo').textContent = `Estado: ${data.status}`;
+        }
+
+        function showError(message) {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('errorState').classList.remove('hidden');
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        // Iniciar la validación cuando se carga la página
+        window.addEventListener('load', validateTicket);
+    </script>
+</body>
+
+</html>
